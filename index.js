@@ -8,6 +8,7 @@ import { s3Client } from "./s3Client.js";
 // import { on } from "events";
 import stream from "stream";
 import { unlink } from "fs";
+import { json } from "express";
 
 
 const s3 = new AWS.S3()
@@ -17,8 +18,8 @@ const arr = []
 
 async function main(){
 
- await readZipFile()
-//  await uploadFile()
+//  await readZipFile()
+ await uploadFile()
 
 }
 
@@ -67,12 +68,12 @@ async function readZipFile(){
 const uu = await unzipper.Open.file('./uploadWgene.zip')
 const file = uu.files
 console.log(file.length)
-fs.appendFileSync('./ik.js', 'const arr = [')
+fs.appendFileSync('./ik.js', '[')
 for(let i = 0; i < file.length; i++){
   const na = file[i].path.split('/pub2/')[1]
   console.log(file[i].path)
   if(file[i].type === 'File'){
-fs.appendFileSync('./ik.js',`" ${file[i].path}",`)
+fs.appendFileSync('./ik.js',`{"path": "${file[i].path}"},`)
 } else{
 
 }
@@ -132,32 +133,88 @@ fs.appendFileSync('./ik.js', ']')
 }
 
 
+async function GetList(){
+    fs.readFile('ik.js','utf8', (err, data) => {
+    if (err) throw err;
+    console.log(data.length);
+    // console.log(data)
+    return data
+  });
+}
+
+
 async function uploadFile(nu){
- createReadStream(nu).on('open', async function(data){
-  console.log(data)
-  await  s3Client.send(new PutObjectCommand({
-    Body: fs.createReadStream(nu),
-    Bucket: 'wgene',
-    Key: 'upload/js/'+nu,
+
+  fs.readFile('ik.json','utf8', async (err, data) => {
+    if (err) throw err;
+    // console.log(data)
+    // const dg = await JSON.stringify(data)
+    const ll = await JSON.parse(data)
+    //  console.log(ll[0])
+
+
+    // ll.forEach(element => {
+    //   console.log(element.path)
+    // });
+
+for(let i = 0; i < ll.length; i++){
+    // console.log(JSON.stringify(ll[i]))
+uploadF(ll[i].path)
+
+}
+console.log(ll.length)
+  });
+
+  // for(let i = 0; i < lis.length; i++){
+  //   console.log(lis[i])
     
-  })).then(Response =>{
-    if(Response.$metadata.httpStatusCode === 200){
-      console.log(
-        "Successfully created "
-    )
-    unlink(nu, (err) => {
-      if (err) throw err;
-      console.log(nu+' was deleted');
-    });
-  // fs.unlinkSync(nu)
+  // }
+
+async function uploadF(path){
+console.log(path)
+fs.createReadStream('uploadWgene.zip')
+  .pipe(unzipper.ParseOne())
+  .pipe(fs.createReadStream('temp/'+path));
+  const zip = fs.createReadStream('uploadWgene.zip').pipe(unzipper.Parse({forceStream: true}));
+  // for await (const entry of zip) {
+  //   const fileName = entry.path;
+  //   const type = entry.type; // 'Directory' or 'File'
+  //   const size = entry.vars.uncompressedSize; // There is also compressedSize;
+  //   const nu = path.split('/')[this.length - 1]
+  //   console.log(nu)
+  //   if (fileName === path) {
+  //     entry.pipe(fs.createWriteStream('temp/' + nu));
+  //     entry.autodrain();
+  //   } else {
+  //     entry.autodrain();
+  //   }
+  // }
+}
+
+//  fs.createReadStream(path).on('open', async function(data){
+//   console.log(data)
+  
+  console.log(nu)
+  // await  s3Client.send(new PutObjectCommand({
+  //   Body: fs.createReadStream(nu),
+  //   Bucket: 'wgene',
+  //   Key: 'upload/js/'+nu,
+    
+  // })).then(Response =>{
+  //   if(Response.$metadata.httpStatusCode === 200){
+  //     console.log(
+  //       "Successfully created "
+  //   )
+  //   unlink(nu, (err) => {
+  //     if (err) throw err;
+  //     console.log(nu+' was deleted');
+  //   });
+  // // fs.unlinkSync(nu)
    
-    }
-  })
+  //   }
+  // })
    
 
-
-})
- 
 
 }
 
