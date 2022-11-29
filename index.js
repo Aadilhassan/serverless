@@ -9,6 +9,7 @@ import { s3Client } from "./s3Client.js";
 import stream from "stream";
 import { unlink } from "fs";
 import { json } from "express";
+import etl from 'etl'
 
 
 const s3 = new AWS.S3()
@@ -143,6 +144,32 @@ async function GetList(){
 }
 
 
+//----------------------------------------------------------ETL----------------------------------------------
+async function EtlUpload(path){
+// console.log(path)
+fs.createReadStream('uploadWgene.zip')
+  .pipe(unzipper.Parse())
+  .pipe(etl.map(entry => {
+    console.log(entry.path)
+    if (entry.path == path)
+      return entry
+        .pipe(etl.toFile('temp/'))
+        .promise();
+    else
+      entry.autodrain();
+  }))
+}
+
+
+
+
+
+//------------------------------------------------------------/ETL----------------------------------------------
+
+
+
+
+
 async function uploadFile(nu){
 
   fs.readFile('ik.json','utf8', async (err, data) => {
@@ -159,7 +186,7 @@ async function uploadFile(nu){
 
 for(let i = 0; i < ll.length; i++){
     // console.log(JSON.stringify(ll[i]))
-uploadF(ll[i].path)
+EtlUpload(ll[i].path)
 
 }
 console.log(ll.length)
@@ -170,12 +197,12 @@ console.log(ll.length)
     
   // }
 
-async function uploadF(path){
-console.log(path)
-fs.createReadStream('uploadWgene.zip')
-  .pipe(unzipper.ParseOne())
-  .pipe(fs.createReadStream('temp/'+path));
-  const zip = fs.createReadStream('uploadWgene.zip').pipe(unzipper.Parse({forceStream: true}));
+// async function uploadF(path){
+// console.log(path)
+// fs.createReadStream('uploadWgene.zip')
+//   .pipe(unzipper.ParseOne())
+//   .pipe(fs.createReadStream('temp/'+path));
+//   const zip = fs.createReadStream('uploadWgene.zip').pipe(unzipper.Parse({forceStream: true}));
   // for await (const entry of zip) {
   //   const fileName = entry.path;
   //   const type = entry.type; // 'Directory' or 'File'
@@ -194,7 +221,7 @@ fs.createReadStream('uploadWgene.zip')
 //  fs.createReadStream(path).on('open', async function(data){
 //   console.log(data)
   
-  console.log(nu)
+  // console.log(nu)
   // await  s3Client.send(new PutObjectCommand({
   //   Body: fs.createReadStream(nu),
   //   Bucket: 'wgene',
@@ -216,7 +243,6 @@ fs.createReadStream('uploadWgene.zip')
    
 
 
-}
 
 
 
